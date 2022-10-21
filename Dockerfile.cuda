@@ -5,10 +5,12 @@ FROM nvidia/cuda:${CUDA_VERSION}.1-base-ubuntu${UBUNTU_VERSION} as builder
 
 ARG DEBIAN_FRONTEND=noniteractive
 
-# john build deps (+gpu)
+# john build deps
 RUN apt update -q && apt install -y git build-essential libssl-dev zlib1g-dev \
-    yasm pkg-config libgmp-dev libpcap-dev libbz2-dev \
-    nvidia-opencl-dev 
+    yasm pkg-config libgmp-dev libpcap-dev libbz2-dev
+
+# nvidia opencl
+RUN apt install -y nvidia-opencl-dev 
     
 # rexgen buil deps
 RUN apt install -y flex libfl-dev libbison-dev cmake clang
@@ -31,14 +33,13 @@ RUN mkdir -p /output/bin && \
     cp -a /build/john/run/* /output/share/john && \
     bash -c "mv /output/share/john/*.{pl,py,rb} /output/share/john/{relbench,benchmark-unify,mailer,makechr} /output/bin"
 
-# ===
 
 FROM nvidia/cuda:${CUDA_VERSION}.1-base-ubuntu${UBUNTU_VERSION} as base
 
 COPY --from=builder /output /usr/local
 
-RUN apt update -q && apt install -y libssl1.1 ocl-icd-libopencl1 libgomp1 \
-    opencl-headers clinfo
+RUN apt update -q && apt install -y libssl1.1 libgomp1 \
+    ocl-icd-libopencl1 opencl-headers clinfo
 
 RUN mkdir -p /etc/OpenCL/vendors && \
     echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
